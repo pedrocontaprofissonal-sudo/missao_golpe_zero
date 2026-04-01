@@ -4305,6 +4305,7 @@ ${JSON.stringify(items, null, 2)}
             state.score = Math.max(0, state.score - 6);
             addBurst(state.player.px * TILE + 16, state.player.py * TILE + 16, '#fb7185', 12);
             sfx.wrong();
+            if (window.quickOops) window.quickOops('Ops!', '💥');
             feedbackEl.className = 'feedback bad';
             feedbackEl.innerHTML = `${opt.explain} <br><strong>-6 pontos</strong>. O combo voltou para x1.`;
           }
@@ -4484,6 +4485,7 @@ ${JSON.stringify(items, null, 2)}
             addBurst(380, 160, '#4ade80', 18); if (window.quickCelebrate) window.quickCelebrate('Acertou!', '✨');
           } else {
             sfx.wrong();
+            if (window.quickOops) window.quickOops('Quase!', '💫');
             feedbackEl.className = 'feedback bad';
             feedbackEl.innerHTML = item.isTrue
               ? 'Não foi dessa vez. A afirmação apresentada corresponde a uma notícia atual carregada na rodada.'
@@ -6009,7 +6011,7 @@ ${JSON.stringify(items, null, 2)}
     min-width: 96px !important;
   }
   .pad > button,
-  .pad > div { display:none !important; }
+  .pad > div:not(.joystick-shell) { display:none !important; }
   .joystick-shell {
     width: 92px;
     height: 92px;
@@ -6180,6 +6182,189 @@ ${JSON.stringify(items, null, 2)}
 
   computeBounds();
   setKnob(0,0);
+})();
+</script>
+
+
+<style id="desktop-dock-fix-v21">
+@media (min-width: 821px) {
+  .mobile-controls {
+    display: none !important;
+    visibility: hidden !important;
+    opacity: 0 !important;
+    pointer-events: none !important;
+    position: static !important;
+    left: auto !important;
+    right: auto !important;
+    bottom: auto !important;
+  }
+  .mobile-controls * {
+    pointer-events: none !important;
+  }
+}
+@media (max-width: 820px) {
+  .mobile-controls {
+    display: grid !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+    pointer-events: auto !important;
+  }
+  .mobile-controls * {
+    pointer-events: auto !important;
+  }
+}
+</style>
+<script id="desktop-dock-fix-script-v21">
+(function(){
+  function syncDockByViewport(){
+    const dock = document.querySelector('.mobile-controls');
+    if(!dock) return;
+    const isMobile = window.matchMedia('(max-width: 820px)').matches;
+    dock.style.display = isMobile ? 'grid' : 'none';
+    dock.style.visibility = isMobile ? 'visible' : 'hidden';
+    dock.style.opacity = isMobile ? '1' : '0';
+    dock.style.pointerEvents = isMobile ? 'auto' : 'none';
+    if(!isMobile){
+      dock.classList.remove('active');
+      document.querySelectorAll('.joystick-shell.active').forEach(el => el.classList.remove('active'));
+      const knob = document.getElementById('joyKnob');
+      if(knob) knob.style.transform = 'translate(-50%, -50%)';
+    }
+  }
+  ['resize','orientationchange','pageshow','focus'].forEach(ev => window.addEventListener(ev, syncDockByViewport, {passive:true}));
+  document.addEventListener('DOMContentLoaded', syncDockByViewport);
+  setTimeout(syncDockByViewport, 0);
+  setTimeout(syncDockByViewport, 180);
+})();
+</script>
+
+<style id="mgz-v22-polish">
+  #quickOopsLayer {
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    display: grid;
+    place-items: center;
+    z-index: 99998;
+    opacity: 0;
+    transition: opacity .18s ease;
+  }
+  #quickOopsLayer.show { opacity: 1; }
+  .quick-oops-card {
+    position: relative;
+    min-width: min(82vw, 330px);
+    padding: 18px 20px;
+    border-radius: 24px;
+    text-align: center;
+    background: linear-gradient(180deg, rgba(54,19,32,.97), rgba(20,10,22,.96));
+    border: 1px solid rgba(255,255,255,.12);
+    box-shadow: 0 28px 80px rgba(0,0,0,.45);
+    transform: translateY(22px) scale(.92);
+    animation: quickCelebratePop .82s cubic-bezier(.22,.9,.2,1) forwards;
+    overflow: hidden;
+  }
+  .quick-oops-card::before {
+    content: "";
+    position: absolute;
+    inset: -22% auto auto 50%;
+    width: 220px;
+    height: 220px;
+    transform: translateX(-50%);
+    background: radial-gradient(circle, rgba(251,113,133,.30), transparent 70%);
+    filter: blur(8px);
+  }
+  .quick-oops-emoji { font-size: 34px; line-height: 1; margin-bottom: 8px; }
+  .quick-oops-title { font-size: 28px; font-weight: 900; color: #fff; letter-spacing: -.03em; }
+  .quick-oops-sub { margin-top: 6px; font-size: 14px; color: #f4d5dd; }
+  .quick-oops-spark { position:absolute; font-size:20px; animation: quickCelebrateSpark .9s ease forwards; opacity:0; }
+  .quick-oops-spark.s1 { left: 14%; top: 20%; animation-delay: .02s; }
+  .quick-oops-spark.s2 { right: 13%; top: 22%; animation-delay: .08s; }
+  .quick-oops-spark.s3 { left: 20%; bottom: 18%; animation-delay: .12s; }
+  .quick-oops-spark.s4 { right: 18%; bottom: 20%; animation-delay: .17s; }
+</style>
+<script id="mgz-v22-polish-script">
+(function(){
+  window.quickOops = function(text = 'Quase!', emoji = '💫') {
+    let layer = document.getElementById('quickOopsLayer');
+    if (!layer) {
+      layer = document.createElement('div');
+      layer.id = 'quickOopsLayer';
+      document.body.appendChild(layer);
+    }
+    layer.innerHTML = `
+      <div class="quick-oops-card">
+        <div class="quick-oops-spark s1">💫</div>
+        <div class="quick-oops-spark s2">✨</div>
+        <div class="quick-oops-spark s3">🌙</div>
+        <div class="quick-oops-spark s4">🫧</div>
+        <div class="quick-oops-emoji">${emoji}</div>
+        <div class="quick-oops-title">${text}</div>
+        <div class="quick-oops-sub">Tenta mais uma</div>
+      </div>`;
+    layer.classList.remove('show');
+    void layer.offsetWidth;
+    layer.classList.add('show');
+    setTimeout(() => layer.classList.remove('show'), 860);
+  };
+
+  function syncDesktopLayout(){
+    const isMobile = window.matchMedia('(max-width: 820px)').matches;
+    const dock = document.querySelector('.mobile-controls');
+    const game = document.getElementById('game');
+    const shell = document.querySelector('.canvas-shell');
+    const stage = document.querySelector('.stage');
+    const wrap = document.querySelector('.game-wrap');
+    const app = document.getElementById('appRoot') || document.querySelector('.app');
+    if (app) app.dataset.viewport = isMobile ? 'mobile' : 'desktop';
+
+    if (!isMobile) {
+      document.body.classList.remove('modal-open-mobile');
+      if (dock) {
+        dock.style.display = 'none';
+        dock.style.visibility = 'hidden';
+        dock.style.opacity = '0';
+        dock.style.pointerEvents = 'none';
+      }
+      document.querySelectorAll('.joystick-shell.active').forEach(el => el.classList.remove('active'));
+      const knob = document.getElementById('joyKnob');
+      if (knob) knob.style.transform = 'translate(-50%, -50%)';
+      if (game) {
+        game.style.height = '';
+        game.style.width = '';
+        game.style.maxWidth = '';
+        game.style.aspectRatio = '';
+      }
+      if (shell) {
+        shell.style.maxWidth = '';
+        shell.style.width = '';
+      }
+      if (stage) {
+        stage.style.minHeight = '';
+        stage.style.height = '';
+        stage.style.paddingBottom = '';
+      }
+      if (wrap) {
+        wrap.style.paddingBottom = '';
+      }
+    } else {
+      if (dock) {
+        dock.style.display = 'grid';
+        dock.style.visibility = 'visible';
+        dock.style.opacity = '1';
+        dock.style.pointerEvents = 'auto';
+      }
+    }
+  }
+
+  ['resize','orientationchange','pageshow','focus'].forEach(ev => {
+    window.addEventListener(ev, () => {
+      syncDesktopLayout();
+      setTimeout(syncDesktopLayout, 60);
+    }, { passive:true });
+  });
+  document.addEventListener('DOMContentLoaded', syncDesktopLayout);
+  setTimeout(syncDesktopLayout, 0);
+  setTimeout(syncDesktopLayout, 180);
 })();
 </script>
 
